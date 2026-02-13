@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberQuest: Blue Protocol</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="container">
+        <div id="start-screen" class="screen active">
+            <h1>CyberQuest</h1>
+            <div id="attempts-ui" class="attempts-badge">Спроби: 1 / 1</div>
+            <div id="welcome-container"></div>
+            <div class="input-group">
+                <label>ОБЕРИ КОМАНДУ:</label>
+                <select id="team-select">
+                    <option value="">Завантаження...</option>
+                </select>
+            </div>
+            <button id="start-btn" onclick="startQuiz()">РОЗПОЧАТИ МІСІЮ</button>
+        </div>
+
+        <div id="waiting-screen" class="screen">
+            <h2 style="color:var(--accent)">ОЧІКУВАННЯ КОМАНДИРА...</h2>
+            <div class="loader"></div>
+            <p>Ти за столом. Чекаємо на старт гри.</p>
+            <button onclick="leaveWaitingRoom()" style="background:none; border:1px solid var(--error); color:var(--error); margin-top:20px; width:auto; padding:10px 20px;">
+                ← ЗМІНИТИ СТІЛ
+            </button>
+        </div>
+
+        <div id="quiz-ui" class="screen">
+            <div class="progress-bar"><div id="progress-fill"></div></div>
+            <div id="quiz-content"></div>
+        </div>
+
+        <div id="result-screen" class="screen">
+            <h2>МІСІЯ ЗАВЕРШЕНА</h2>
+            <div class="nickname-display" id="nick-display"></div>
+            <div id="conclusion-box"></div>
+            <p>Твій бал: <span id="final-score">0</span> / 26</p>
+
+            <div class="lb-tabs">
+                <div class="tab-btn active" id="t-pl" onclick="switchTab('pl')">ГРАВЦІ</div>
+                <div class="tab-btn" id="t-tm" onclick="switchTab('tm')">КОМАНДИ</div>
+            </div>
+            <div class="lb-content">
+                <div id="player-list" class="lb-list active"></div>
+                <div id="team-list" class="lb-list"></div>
+            </div>
+            <button class="btn-restart" onclick="location.reload()">ЗАНОВО</button>
+        </div>
+    </div>
+
+
+    <div id="image-modal" class="modal-overlay" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="enlarged-image">
+    </div>
+
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

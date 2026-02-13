@@ -1,0 +1,303 @@
+:root {
+    --bg: #050b18;
+    --accent: #00d2ff;
+    --secondary: #9d00ff;
+    --text: #e0e6ed;
+    --card-bg: rgba(13, 25, 48, 0.95);
+    --error: #ff4b2b;
+    --success: #22c55e;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+    /* Запобігає виділенню тексту при швидких кліках */
+    user-select: none;
+}
+
+#matrix-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    opacity: 0.4;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+    width: 92%;
+    max-width: 500px;
+    background: var(--card-bg);
+    margin: 20px auto;
+    padding: 30px 20px;
+    border-radius: 20px;
+    border: 1px solid var(--secondary);
+    box-shadow: 0 0 30px rgba(157, 0, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.screen {
+    display: none;
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* --- ТАЙМЕР --- */
+.timer-container {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    margin-bottom: 25px;
+    overflow: hidden;
+    border: 1px solid rgba(0,210,255,0.2);
+}
+
+#timer-bar {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--error));
+    /* Плавність для секундного кроку */
+    transition: width 1s linear;
+}
+
+/* --- КНОПКИ ТА ЕЛЕМЕНТИ ВВОДУ --- */
+select, button {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 1rem;
+    margin-top: 12px;
+    cursor: pointer;
+    border: 1px solid var(--secondary);
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+select {
+    background: #112240;
+    color: white;
+    outline: none;
+    /* Виправлення для iPhone */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+button {
+    background: rgba(157, 0, 255, 0.1);
+    color: white;
+    font-weight: bold;
+}
+
+button:hover:not(:disabled) {
+    background: var(--secondary);
+    box-shadow: 0 0 15px var(--secondary);
+}
+
+/* Стан після вибору відповіді */
+button.correct {
+    background-color: var(--success) !important;
+    border-color: white !important;
+    color: white !important;
+    box-shadow: 0 0 20px var(--success);
+}
+
+button.wrong {
+    background-color: var(--error) !important;
+    border-color: white !important;
+    color: white !important;
+    box-shadow: 0 0 20px var(--error);
+}
+
+button:disabled {
+    cursor: default;
+    opacity: 0.7;
+}
+
+/* --- ПОРІВНЯННЯ КАРТИНОК --- */
+.image-comparison {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.img-box {
+    flex: 1;
+    position: relative;
+    border: 2px solid var(--secondary);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 160px;
+    background: #000;
+}
+
+.img-box span {
+    position: absolute;
+    top: 8px; left: 8px;
+    background: var(--accent);
+    color: var(--bg);
+    padding: 2px 10px;
+    font-weight: 800;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    z-index: 2;
+}
+
+.img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* --- ЛІДЕРБОРД ТА ТАБИ --- */
+.lb-tabs {
+    display: flex;
+    gap: 5px;
+    margin-top: 25px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 5px;
+    border-radius: 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.8rem;
+    border-radius: 8px;
+    color: #8b949e;
+}
+
+.tab-btn.active {
+    background: var(--secondary);
+    color: white;
+}
+
+.leader-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 10px;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+/* --- СПЕЦІАЛЬНІ ЕКРАНИ --- */
+.loader-wrap {
+    padding: 40px 0;
+}
+
+.nickname-display {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--accent);
+    margin: 15px 0;
+    text-shadow: 0 0 10px var(--accent);
+}
+
+/* --- МОБІЛЬНА АДАПТАЦІЯ --- */
+@media (max-width: 480px) {
+    .container { margin: 10px auto; padding: 20px 15px; }
+    h1 { font-size: 1.6rem; }
+    .img-box { height: 130px; }
+    button { padding: 14px; font-size: 0.9rem; }
+}
+
+/* Фон затемнення */
+.modal-overlay {
+    display: none; /* Приховано за замовчуванням */
+    position: fixed; /* Фіксована позиція поверх всього */
+    z-index: 1000; /* Найвищий пріоритет відображення */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Якщо картинка дуже висока, з'явиться скрол */
+    background-color: rgba(0, 0, 0, 0.9); /* Чорний фон з прозорістю 90% */
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s;
+    cursor: zoom-out; /* Курсор показує, що клік закриє вікно */
+}
+
+/* Сама збільшена картинка */
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90vh; /* Максимальна висота - 90% висоти екрана */
+    object-fit: contain;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+    animation: zoomIn 0.3s;
+    cursor: default; /* Щоб клік по картинці не закривав її відразу, якщо не хочемо */
+}
+
+/* Кнопка закриття (хрестик) */
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    z-index: 1001;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Анімація появи картинки */
+@keyframes zoomIn {
+    from {transform: scale(0.7); opacity: 0} 
+    to {transform: scale(1); opacity: 1}
+}
+
+/* Додаємо курсор-вказівник для маленьких картинок у квізі */
+.img-box img {
+    cursor: zoom-in;
+}
+
+.stopwatch-display {
+    font-family: 'Courier New', Courier, monospace; /* Моноширинний шрифт для стабільності цифр */
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--accent);
+    text-shadow: 0 0 15px var(--accent);
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+}
+
+/* Коли часу мало (менше 10 сек), зробимо таймер червоним */
+.stopwatch-display.danger {
+    color: var(--error);
+    text-shadow: 0 0 15px var(--error);
+    animation: blink 0.5s infinite alternate;
+}
+
+@keyframes blink {
+    from { opacity: 1; }
+    to { opacity: 0.6; }
+}

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="uk">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CyberQuest Control Panel</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --accent: #0ea5e9;
+            --secondary: #8b5cf6;
+            --red: #ef4444;
+            --green: #22c55e;
+            --gold: #fbbf24;
+        }
+
+        body {
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            margin: 0;
+        }
+
+        
+        .grid { 
+            display: grid; 
+            /* Можна змінити на 2 колонки, якщо столи стануть занадто великими для екрана */
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 60px; 
+            padding: 40px; 
+        }
+
+        .table-wrap { 
+            position: relative; 
+            width: 320px;   /* Збільшено */
+            height: 320px;  /* Збільшено */
+            margin: auto; 
+        }
+
+        .table-center { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            width: 160px;   /* Збільшено */
+            height: 160px;  /* Збільшено */
+            background: #1e293b; 
+            border: 4px solid var(--accent); /* Товстіша лінія */
+            border-radius: 50%; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            z-index: 2; 
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+        }
+
+        .spot { 
+            position: absolute; 
+            width: 65px;    /* Збільшено */
+            height: 65px;   /* Збільшено */
+            border-radius: 50%; 
+            border: 3px solid #334155; 
+            transition: 0.5s; 
+            background: var(--red); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 1.1rem; /* Більший шрифт для балів */
+            font-weight: 800; 
+        }
+
+        /* Збільшений розмір нікнеймів у тултіпах або підписах */
+        .spot:hover::after {
+            content: attr(title);
+            position: absolute;
+            bottom: -35px;
+            background: var(--accent);
+            color: black;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            z-index: 10;
+        }
+
+        .spot.joined {
+            background: var(--green);
+            box-shadow: 0 0 15px var(--green);
+            border-color: white;
+        }
+
+        .spot.finished {
+            background: var(--gold);
+            box-shadow: 0 0 15px var(--gold);
+            color: black;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+        }
+
+        button {
+            padding: 15px 40px;
+            border-radius: 30px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .btn-start {
+            background: var(--green);
+            color: white;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+        }
+
+        .btn-reset {
+            background: var(--red);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🛰️ ЦЕНТР КЕРУВАННЯ КІБЕР-БИТВОЮ</h1>
+    <div id="room" class="grid"></div>
+    <div class="controls">
+        <button class="btn-reset" onclick="adminAction('reset_game')">ОЧИСТИТИ ВСЕ 🗑️</button>
+        <button class="btn-start" id="start-btn" onclick="adminAction('start_game')">FORCE START ⚡</button>
+    </div>
+
+    <script>
+        const API_URL = "https://europe-west3-alphahome-484017.cloudfunctions.net/manage-leaderboard";
+        let adminKey = "";
+
+        async function loadRoom() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            const room = document.getElementById('room');
+            room.innerHTML = '';
+
+            
+            data.teams.forEach(team => {
+                let html = `<div class="table-wrap"><div class="table-center">
+                    <div style="font-size:0.9rem; color:#94a3b8; font-weight:bold;">${team.name}</div>
+                    <div style="font-size:2.2rem; font-weight:900; color:white;">${team.total_score}</div>
+                </div>`;
+                
+                for(let i=0; i<6; i++) {
+                    const angle = (i * 60) * (Math.PI / 180);
+                    
+                    // --- НОВІ КООРДИНАТИ ---
+                    // 160 - це центр (320 / 2)
+                    // 120 - це радіус віддалення кружечків від центру
+                    // 32.5 - це зміщення на половину розміру кружечка (65 / 2)
+                    const x = 160 + 120 * Math.cos(angle) - 32.5;
+                    const y = 160 + 120 * Math.sin(angle) - 32.5;
+                    
+                    const m = team.members[i];
+                    
+                    let cls = ''; let txt = ''; let nick = 'Вільно';
+                    if(m) {
+                        cls = m.status === 'finished' ? 'finished' : 'joined';
+                        txt = m.score > 0 ? m.score : '...';
+                        nick = m.nick;
+                    }
+                    html += `<div class="spot ${cls}" style="left:${x}px; top:${y}px" title="${nick}">${txt}</div>`;
+                }
+                room.innerHTML += html + `</div>`;
+            });
+
+            // Кнопка старту
+            const sBtn = document.getElementById('start-btn');
+            if (data.game_status === 'started') { sBtn.innerText = "ГРА ТРИВАЄ"; sBtn.disabled = true; }
+            else { sBtn.innerText = "РОЗПОЧАТИ БИТВУ ⚡"; sBtn.disabled = false; }
+        }
+
+        async function adminAction(cmd) {
+            if (!adminKey) {
+                adminKey = prompt("Введіть пароль адміністратора:");
+                if (!adminKey) return;
+            }
+
+            if (cmd === 'reset_game' && !confirm("ВИДАЛИТИ ВСІХ ГРАВЦІВ?")) return;
+
+            const res = await fetch(API_URL, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Key': adminKey },
+                body: JSON.stringify({ command: cmd })
+            });
+
+            if (res.status === 401) {
+                alert("Невірний пароль!");
+                adminKey = "";
+            } else {
+                loadRoom();
+            }
+        }
+        setInterval(loadRoom, 3000);
+    </script>
+</body>
+
+</html>
