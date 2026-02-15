@@ -1,4 +1,4 @@
-# --- НАЛАШТУВАННЯ ПРОВАЙДЕРА ---
+# --- 1. НАЛАШТУВАННЯ ПРОВАЙДЕРА ---
 terraform {
   required_providers {
     google = {
@@ -13,11 +13,16 @@ provider "google" {
   region  = var.region
 }
 
+# --- 2. ЗМІННІ ---
 variable "project_id" { default = "alphahome-484017" }
 variable "region"     { default = "europe-west3" }
-variable "bucket_name" { default = "cyberquest-2026" }
+variable "bucket_name" { default = "cyberquest-for-school-2026" }
+variable "admin_pass" { 
+  default = "cyber-admin-2026" 
+  sensitive = true 
+}
 
-# --- 1. FRONTEND (GCS Bucket) ---
+# --- 3. FRONTEND (Cloud Storage) ---
 resource "google_storage_bucket" "frontend" {
   name          = var.bucket_name
   location      = var.region
@@ -29,20 +34,19 @@ resource "google_storage_bucket" "frontend" {
 
   cors {
     origin          = ["*"]
-    method          = ["GET", "POST", "PUT", "OPTIONS"] # Додано PUT для адмінки
+    method          = ["GET", "POST", "PUT", "OPTIONS"]
     response_header = ["*"]
     max_age_seconds = 3600
   }
 }
 
-# Робимо бакет публічним
 resource "google_storage_bucket_iam_member" "public_access" {
   bucket = google_storage_bucket.frontend.name
   role   = "roles/storage.objectViewer"
   member = "allUsers"
 }
 
-# МАСИВ ФАЙЛІВ ФРОНТЕНДУ (Автоматичне завантаження всіх частин)
+# Автоматичне завантаження всіх файлів з папки ./frontend
 locals {
   frontend_files = {
     "index.html"    = "text/html"
@@ -54,16 +58,15 @@ locals {
 }
 
 resource "google_storage_bucket_object" "frontend_assets" {
-  for_each     = local.frontend_files
-  name         = each.key
-  bucket       = google_storage_bucket.frontend.name
-  source       = "./frontend/${each.key}"
-  content_type = each.value
-  
-  cache_control = "no-cache, max-age=0"
+  for_each      = local.frontend_files
+  name          = each.key
+  bucket        = google_storage_bucket.frontend.name
+  source        = "./frontend/${each.key}"
+  content_type  = each.value
+  cache_control = "no-cache, max-age=0" # ВИРІШУЄ ПРОБЛЕМУ КЕШУВАННЯ
 }
 
-# --- 2. DATABASE (Firestore) ---
+# --- 4. DATABASE (Firestore) ---
 resource "google_firestore_database" "database" {
   name        = "(default)"
   location_id = var.region
@@ -71,21 +74,24 @@ resource "google_firestore_database" "database" {
   deletion_policy = "DELETE"
 }
 
-# Надаємо права акаунту на Firestore
+# Сервісний акаунт для функцій
+resource "google_service_account" "quiz_sa" {
+  account_id   = "sa-for-presentation"
+  display_name = "Service Account for CyberQuest"
+}
+
 resource "google_project_iam_member" "cf_firestore_user" {
   project = var.project_id
   role    = "roles/datastore.user"
-  member  = "serviceAccount:sa-for-presentation@alphahome-484017.iam.gserviceaccount.com"
+  member  = "serviceAccount:${google_service_account.quiz_sa.email}"
 }
 
-# --- 3. BACKEND (Cloud Functions v2) ---
-
+# --- 5. BACKEND (Cloud Functions v2) ---
 resource "google_storage_bucket" "function_bucket" {
   name     = "${var.project_id}-gcf-source"
   location = var.region
 }
 
-# Архівуємо код (переконайся, що teams_config.json лежить у /backend)
 data "archive_file" "function_zip" {
   type        = "zip"
   source_dir  = "./backend"
@@ -119,13 +125,12 @@ resource "google_cloudfunctions2_function" "leaderboard_api" {
     available_memory   = "256Mi"
     timeout_seconds    = 60
     ingress_settings   = "ALLOW_ALL"
-
-    environment_variables = {
-      ADMIN_PASSWORD = "123456" # CHANGE ME
-    }
     
-    # Використовуємо створений вище акаунт
-    service_account_email = "sa-for-presentation@alphahome-484017.iam.gserviceaccount.com"
+    environment_variables = {
+      ADMIN_PASSWORD = var.admin_pass # ПАРОЛЬ НЕ В КОДІ PYTHON
+    }
+
+    service_account_email = google_service_account.quiz_sa.email
   }
 
   depends_on = [google_project_iam_member.cf_firestore_user]
@@ -138,53 +143,30 @@ resource "google_cloud_run_service_iam_member" "public_invoker" {
   member   = "allUsers"
 }
 
-# --- ІНДЕКСИ FIRESTORE ---
-resource "google_firestore_index" "leaderboard_idx" {
+# --- 6. СКЛАДЕНІ ІНДЕКСИ (Для сортування лідерборду) ---
+resource "google_firestore_index" "leaderboard_composite" {
   project    = var.project_id
   database   = "(default)"
   collection = "leaderboard"
-  fields { 
-    field_path = "score"
-    order = "DESCENDING" 
-  }
-  fields { 
-    field_path = "timestamp" 
-    order = "DESCENDING" 
-  }
+
+  fields { field_path = "score";     order = "DESCENDING" }
+  fields { field_path = "timestamp"; order = "DESCENDING" }
 }
 
 resource "google_firestore_index" "teams_idx" {
   project    = var.project_id
   database   = "(default)"
   collection = "teams"
-  fields { 
-    field_path = "total_score"
-    order = "DESCENDING" 
-  }
-  fields { 
-    field_path = "timestamp" 
-    order = "DESCENDING" 
-  }
+  fields { field_path = "total_score"; order = "DESCENDING" }
 }
 
-# --- ВИХІДНІ ДАНІ ---
+# --- 7. OUTPUTS ---
 output "frontend_url" {
   value = "https://storage.googleapis.com/${google_storage_bucket.frontend.name}/index.html"
 }
-
 output "admin_url" {
   value = "https://storage.googleapis.com/${google_storage_bucket.frontend.name}/admin.html"
 }
-
 output "api_endpoint" {
   value = google_cloudfunctions2_function.leaderboard_api.url
-}
-
-# Якщо хочеш завантажувати всі картинки з папки автоматично
-resource "google_storage_bucket_object" "quiz_images" {
-  for_each     = fileset("${path.module}/frontend/img/", "*")
-  name         = "img/${each.value}"
-  bucket       = google_storage_bucket.frontend.name
-  source       = "./frontend/img/${each.value}"
-  content_type = "image/jpeg" # Або інший тип залежно від файлів
 }
