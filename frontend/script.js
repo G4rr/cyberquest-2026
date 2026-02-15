@@ -75,15 +75,6 @@ async function loadData() {
     }
 }
 
-// async function loadData() {
-//     const res = await fetch(API_URL);
-//     const data = await res.json();
-//     const select = document.getElementById('team-select');
-//     select.innerHTML = '<option value="">-- ОБЕРИ КОМАНДУ --</option>' + data.allowed_teams.map(t => `<option value="${t}">${t}</option>`).join('');
-//     document.getElementById('player-list').innerHTML = data.players.map(p => `<div class="leader-item"><span>${p.nick}</span><b>${p.score}</b></div>`).join('');
-//     document.getElementById('team-list').innerHTML = data.teams.map(t => `<div class="leader-item"><span>${t.name}</span><b>${t.score}</b></div>`).join('');
-// }
-
 async function startQuiz() {
     const team = document.getElementById('team-select').value;
     if (!team) return alert("Обери команду!");
@@ -162,56 +153,6 @@ function showQuestion() {
     // Скидаємо та запускаємо таймер
     startTimer();
 }
-
-// function showQuestion() {
-//     const q = selectedQuestions[currentStep];
-//     const content = document.getElementById('quiz-content');
-    
-//     // Скидаємо та запускаємо таймер
-//     startTimer();
-
-//     document.getElementById('progress-fill').style.width = `${(currentStep / selectedQuestions.length) * 100}%`;
-//     const shuffled = [...q.options].sort(() => 0.5 - Math.random());
-
-//     let html = `
-//         <div class="timer-container"><div id="timer-bar"></div></div>
-//         <div style="font-size:3rem; margin-bottom:10px;">${q.icon}</div>
-//         <h2>${q.q}</h2>
-//     `;
-
-//     if (q.type === "image") {
-//         html += `
-//             <div class="image-comparison">
-//                 <div class="img-box"><span>А</span><img src="${q.imgA}"></div>
-//                 <div class="img-box"><span>Б</span><img src="${q.imgB}"></div>
-//             </div>`;
-//     }
-
-//     html += `<div class="options" id="options-grid">
-//         ${shuffled.map((o, index) => `
-//             <button onclick="processAnswer(this, ${o.score})">${o.text}</button>
-//         `).join('')}
-//     </div>`;
-    
-//     content.innerHTML = html;
-// }
-
-// function startTimer() {
-//     if (timerInterval) clearInterval(timerInterval);
-//     let timeLeft = QUESTION_TIME;
-//     const bar = document.getElementById('timer-bar');
-
-//     timerInterval = setInterval(() => {
-//         timeLeft--;
-//         const percentage = (timeLeft / QUESTION_TIME) * 100;
-//         if (bar) bar.style.width = percentage + "%";
-
-//         if (timeLeft <= 0) {
-//             clearInterval(timerInterval);
-//             autoSkip(); // Час вийшов
-//         }
-//     }, 1000);
-// }
 
 function startTimer() {
     if (timerInterval) clearInterval(timerInterval);
